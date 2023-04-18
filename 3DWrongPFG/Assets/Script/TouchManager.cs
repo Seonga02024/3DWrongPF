@@ -4,27 +4,27 @@ using UnityEngine;
 
 public class TouchManager : MonoBehaviour
 {
-    public float rotateSpeed = 0.1f;
     public GameObject answerObj;
     public GameObject wrongObj;
-    public GameObject cubes;
     private Vector2 touchBeganPos;
     private Vector2 touchEndedPos;
     private Vector2 touchDif;
-    private float swipeSensitivity = 15;
-    private float checkTime = 2;
+    private float swipeSensitivity = 15; // 터치 민감도
+    private float checkTime = 1; // 다음 터치될 때까지 걸리는 시간
+    private float currentTime = 0;
+    private float RoSpeedTime = 0;
 
     // Start is called before the first frame update
     void Start()
     {
-        
+        RoSpeedTime = 60 / checkTime;
     }
 
     // Update is called once per frame
     void Update()
     {
-        Swipe1();
-        checkTime += Time.deltaTime;
+        Swipe();
+        currentTime += Time.deltaTime;
         if (Input.GetMouseButton(0)) // 클릭한 경우
         {
 
@@ -38,9 +38,8 @@ public class TouchManager : MonoBehaviour
         while (runTime < duration)
         {
             runTime += Time.deltaTime;
-            answerObj.transform.Rotate(vector * Time.deltaTime * 60, Space.World);
-            wrongObj.transform.Rotate(vector * Time.deltaTime * 60, Space.World); // runTime / duration
-
+            answerObj.transform.Rotate(vector * Time.deltaTime * RoSpeedTime, Space.World);
+            wrongObj.transform.Rotate(vector * Time.deltaTime * RoSpeedTime, Space.World);
             yield return null;
         }
     }
@@ -51,13 +50,11 @@ public class TouchManager : MonoBehaviour
     }
 
     //스와이프와 터치
-    public void Swipe1()
+    public void Swipe()
     {
-        if (Input.touchCount > 0 && checkTime > 1f)
+        if (Input.touchCount > 0 && currentTime > checkTime)
         {
-            //Debug.Log("touch");
             Touch touch = Input.GetTouch(0);
-            
             if (touch.phase == TouchPhase.Began)
             {
                 touchBeganPos = touch.position;
@@ -83,20 +80,32 @@ public class TouchManager : MonoBehaviour
                     else if (touchDif.x > 0 && Mathf.Abs(touchDif.y) < Mathf.Abs(touchDif.x))
                     {
                         Debug.Log("right");
-                        StartCoroutine(Wait(1f, new Vector3(0,-1,0)));
+                        StartCoroutine(Wait(1f, new Vector3(0, -1, 0)));
                     }
                     else if (touchDif.x < 0 && Mathf.Abs(touchDif.y) < Mathf.Abs(touchDif.x))
                     {
                         Debug.Log("Left");
                         StartCoroutine(Wait(1f, new Vector3(0, 1, 0)));
                     }
-                    checkTime = 0;
+                    currentTime = 0;
                 }
-                //터치.
+                //터치
                 else
                 {
                     Debug.Log("touch");
-                    checkTime = 0;
+
+                    Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+                    RaycastHit hit;
+                    if (Physics.Raycast(ray, out hit))
+                    {
+                        Debug.Log(hit.transform.name);
+                        if (hit.transform.tag == "answer")
+                        {
+                            Destroy(hit.transform.gameObject);
+                        }
+                    }
+
+                    currentTime = 0;
                 }
             }
         }
